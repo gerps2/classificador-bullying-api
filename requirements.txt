@@ -1,0 +1,8 @@
+Flask==2.3.2
+langdetect==1.0.9
+nltk==3.8.1
+tensorflow==2.12.0
+scikit-learn==1.2.2
+gunicorn==20.1.0
+pickle5
+
