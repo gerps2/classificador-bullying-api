@@ -5,20 +5,21 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import string
+from dotenv import load_dotenv
+import os
+import boto3
+import io
+
+
 
 class Predictor:
     def __init__(self):
-        # Load the trained models from pickle files
-        with open('models/nb_model.pkl', 'rb') as file:
-            self.nb_model = pickle.load(file)
-    
-        with open('models/svm_model.pkl', 'rb') as file:
-            self.svm_model = pickle.load(file)
-    
-        # Load the TF-IDF vectorizer
-        with open('models/vectorizer.pkl', 'rb') as file:
-            self.vectorizer = pickle.load(file)
-    
+        load_dotenv()
+        
+        self.nb_model = self.load_model_from_s3('nb_model.pkl')
+        self.svm_model = self.load_model_from_s3('svm_model.pkl')
+        self.vectorizer = self.load_model_from_s3('vectorizer.pkl')
+        
         # Load the RNN model
         # with open('models/rnn_model.pkl', 'rb') as file:
         #    (
@@ -28,6 +29,19 @@ class Predictor:
         #        self.rnn_tokenizer,
         #        self.rnn_max_len,
         #    ) = pickle.load(file)
+        
+    def load_model_from_s3(self, file_key):
+        aws_access_key_id = os.getenv('BUCKETEER_AWS_ACCESS_KEY_ID')
+        aws_secret_access_key = os.getenv('BUCKETEER_AWS_SECRET_ACCESS_KEY')
+        aws_bucket_name = os.getenv('BUCKETEER_BUCKET_NAME')
+        
+        s3 = boto3.client('s3',
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key
+        )
+        response = s3.get_object(Bucket=aws_bucket_name, Key=file_key)
+        model_data = response['Body'].read()
+        return pickle.loads(model_data)
 
     def predict(self, texts):
         # Preprocess the texts
